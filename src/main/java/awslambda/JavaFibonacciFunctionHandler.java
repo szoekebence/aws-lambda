@@ -2,15 +2,14 @@ package awslambda;
 
 public class JavaFibonacciFunctionHandler {
 
-    public Long handleRequest(String n) {
+    public long handleRequest(int n) {
         long startTime = System.nanoTime();
-        int intN = Integer.parseInt(n), i;
         long f1 = 0L, f2 = 1L;
-        for (i = 1; i < intN; i++) {
+        for (int i = 1; i < n; i++) {
             long next = f1 + f2;
             f1 = f2;
             f2 = next;
         }
-        return (System.nanoTime() - startTime) / 1000000;
+        return (System.nanoTime() - startTime);
     }
 }

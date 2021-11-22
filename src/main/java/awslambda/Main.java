@@ -21,16 +21,18 @@ public class Main {
         AWSCredentials credentials = new BasicAWSCredentials(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY);
         InvokeRequest lmbRequest = new InvokeRequest()
                 .withFunctionName("szokeb-java-fibonacci")
-                .withPayload("50");
+                .withPayload("100");
         lmbRequest.setInvocationType(InvocationType.RequestResponse);
         AWSLambda lambda = AWSLambdaClientBuilder.standard()
                 .withRegion(Regions.EU_CENTRAL_1)
                 .withCredentials(new AWSStaticCredentialsProvider(credentials)).build();
+        long startTime = System.nanoTime();
         InvokeResult lmbResult = lambda.invoke(lmbRequest);
+        long endTime = System.nanoTime();
+        long lambdaExecTime = Long.parseLong(new String(lmbResult.getPayload().array(), StandardCharsets.UTF_8));
 
-        String resultJSON = new String(lmbResult.getPayload().array(), StandardCharsets.UTF_8);
-
-        System.out.println(resultJSON);
+        System.out.println("Lambda execution time: " + lambdaExecTime + " ns");
+        System.out.println("Invoke time: " + ((endTime - startTime) / 1000000) + " ms");
+        System.out.println("Total: " + ((lambdaExecTime + (endTime - startTime)) / 1000000) + " ms");
     }
-
 }
