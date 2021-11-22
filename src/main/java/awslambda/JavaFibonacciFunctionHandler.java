@@ -1,10 +1,9 @@
 package awslambda;
 
-import com.amazonaws.services.lambda.runtime.Context;
-
 public class JavaFibonacciFunctionHandler {
 
-    public String handleRequest(String n, Context context) {
+    public Long handleRequest(String n) {
+        long startTime = System.nanoTime();
         int intN = Integer.parseInt(n), i;
         long f1 = 0L, f2 = 1L;
         for (i = 1; i < intN; i++) {
@@ -12,6 +11,6 @@ public class JavaFibonacciFunctionHandler {
             f1 = f2;
             f2 = next;
         }
-        return String.valueOf(context.getRemainingTimeInMillis());
+        return (System.nanoTime() - startTime) / 1000000;
     }
 }
