@@ -1,4 +1,4 @@
-package awslambda;
+package awslambda.functionhandler;
 
 public class JavaFibonacciFunctionHandler {
 
