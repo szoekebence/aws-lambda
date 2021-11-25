@@ -1,4 +1,4 @@
-package awslambda.gateway.lambdafunction;
+package awslambda.gateway.aws.lambdafunction;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -12,8 +12,8 @@ import com.amazonaws.services.lambda.model.InvokeResult;
 
 import java.nio.charset.StandardCharsets;
 
-import static com.amazonaws.auth.profile.internal.ProfileKeyConstants.AWS_ACCESS_KEY_ID;
-import static com.amazonaws.auth.profile.internal.ProfileKeyConstants.AWS_SECRET_ACCESS_KEY;
+import static awslambda.gateway.aws.AWSCredentials.AWS_ACCESS_KEY_ID;
+import static awslambda.gateway.aws.AWSCredentials.AWS_SECRET_ACCESS_KEY;
 
 public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
 
@@ -39,8 +39,8 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
         float lambdaExecTime = Float.parseFloat(new String(lmbResult.getPayload().array(), StandardCharsets.UTF_8));
 
         return new float[]{
-                (lambdaExecTime / 1000000F),                                //Lambda execution time
-                (((endTime - startTime) - lambdaExecTime) / 1000000F),      //Invoke time
-                ((endTime - startTime) / 1000000F)};                        //Total time
+                (lambdaExecTime / 1000000F),                                //Lambda execution time in ms
+                (((endTime - startTime) - lambdaExecTime) / 1000000F),      //Invoke time in ms
+                ((endTime - startTime) / 1000000F)};                        //Total time in ms
     }
 }

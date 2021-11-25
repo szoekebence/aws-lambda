@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Map;
 
 @DynamoDBTable(tableName = "LamdbaExecutionTimes")
-public class LamdbaExecutionTimes {
+public class LambdaExecutionTimes {
 
     public String functionLanguage;
-    public Map<String, List<Map<String, Float>>> architecture;
+    public Map<String, Map<String, List<Map<String, Float>>>> memorySize;
 
     @DynamoDBHashKey(attributeName = "functionLanguage")
     public String getFunctionLanguage() {
@@ -22,15 +22,15 @@ public class LamdbaExecutionTimes {
         this.functionLanguage = functionLanguage;
     }
 
-    @DynamoDBAttribute(attributeName = "architecture")
-    public Map<String, List<Map<String, Float>>> getArchitecture() {
-        return architecture;
+    @DynamoDBAttribute(attributeName = "memorySize")
+    public Map<String, Map<String, List<Map<String, Float>>>> getMemorySize() {
+        return memorySize;
     }
 
-    public void setArchitecture(Map<String, List<Map<String, Float>>> architecture) {
-        this.architecture = architecture;
+    public void setMemorySize(Map<String, Map<String, List<Map<String, Float>>>> memorySize) {
+        this.memorySize = memorySize;
     }
 
-    public LamdbaExecutionTimes() {
+    public LambdaExecutionTimes() {
     }
 }

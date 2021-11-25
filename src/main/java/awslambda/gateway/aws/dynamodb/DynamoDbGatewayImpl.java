@@ -1,6 +1,6 @@
-package awslambda.gateway.dynamodb;
+package awslambda.gateway.aws.dynamodb;
 
-import awslambda.entity.LamdbaExecutionTimes;
+import awslambda.entity.LambdaExecutionTimes;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
@@ -8,10 +8,11 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 
+import static awslambda.gateway.aws.AWSCredentials.AWS_ACCESS_KEY_ID;
+import static awslambda.gateway.aws.AWSCredentials.AWS_SECRET_ACCESS_KEY;
+
 public class DynamoDbGatewayImpl implements DynamoDbGateway {
 
-    private static final String AWS_ACCESS_KEY_ID = "AKIA46D2LTA52FLZ5NGR";
-    private static final String AWS_SECRET_ACCESS_KEY = "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";
     private static final String DB_HOST = "https://dynamodb.eu-central-1.amazonaws.com";
     private static final String REGION = "eu-central-1";
 
@@ -28,7 +29,7 @@ public class DynamoDbGatewayImpl implements DynamoDbGateway {
     }
 
     @Override
-    public void saveExecution(LamdbaExecutionTimes executionTimes) {
+    public void saveExecution(LambdaExecutionTimes executionTimes) {
         dynamoDBMapper.save(executionTimes);
     }
 }

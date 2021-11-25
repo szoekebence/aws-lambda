@@ -1,4 +1,4 @@
-package awslambda.gateway.lambdafunction;
+package awslambda.gateway.aws.lambdafunction;
 
 public interface AWSLambdaFunctionGateway {
 
