@@ -12,8 +12,8 @@ import com.amazonaws.services.lambda.model.InvokeResult;
 
 import java.nio.charset.StandardCharsets;
 
-import static awslambda.gateway.aws.AWSCredentials.AWS_ACCESS_KEY_ID;
-import static awslambda.gateway.aws.AWSCredentials.AWS_SECRET_ACCESS_KEY;
+import static awslambda.gateway.aws.AWSCConstants.AWS_ACCESS_KEY_ID;
+import static awslambda.gateway.aws.AWSCConstants.AWS_SECRET_ACCESS_KEY;
 
 public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
 

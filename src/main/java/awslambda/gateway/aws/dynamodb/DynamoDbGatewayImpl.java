@@ -8,8 +8,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 
-import static awslambda.gateway.aws.AWSCredentials.AWS_ACCESS_KEY_ID;
-import static awslambda.gateway.aws.AWSCredentials.AWS_SECRET_ACCESS_KEY;
+import static awslambda.gateway.aws.AWSCConstants.AWS_ACCESS_KEY_ID;
+import static awslambda.gateway.aws.AWSCConstants.AWS_SECRET_ACCESS_KEY;
 
 public class DynamoDbGatewayImpl implements DynamoDbGateway {
 
