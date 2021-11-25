@@ -7,8 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static awslambda.gateway.aws.AWSCConstants.LAMBDA_FUNCTION_ARCHITECTURES;
-import static awslambda.gateway.aws.AWSCConstants.LAMBDA_FUNCTION_MEMORY_SIZE;
+import static awslambda.gateway.aws.AWSConstants.LAMBDA_FUNCTION_ARCHITECTURES;
+import static awslambda.gateway.aws.AWSConstants.LAMBDA_FUNCTION_MEMORY_SIZE;
 
 public class ResultGenerator {
 
@@ -18,30 +18,39 @@ public class ResultGenerator {
         this.lambdaFunctionGateway = lambdaFunctionGateway;
     }
 
-    public Map<String, Map<String, Map<String, Map<String, List<Map<String, Float>>>>>> generateResultsByLambdaFunctionLanguage() {
+    public Map<String, Map<String, Map<String, Map<String, List<Map<String, Float>>>>>>
+    generateResultsByLambdaFunctionLanguage(String functionLanguage) {
+
         Map<String, Map<String, Map<String, Map<String, List<Map<String, Float>>>>>> memorySizesTree = new HashMap<>();
         Map<String, Map<String, Map<String, List<Map<String, Float>>>>> memorySizes = new HashMap<>();
         for (String memorySize : LAMBDA_FUNCTION_MEMORY_SIZE) {
             Map<String, Map<String, List<Map<String, Float>>>> architectureTree = new HashMap<>();
-            architectureTree.put("architectures", generateResultsByMemorySize());
+            architectureTree.put("architectures", generateResultsByMemorySize(functionLanguage, memorySize));
             memorySizes.put(memorySize, architectureTree);
             memorySizesTree.put("memorySizes", memorySizes);
         }
         return memorySizesTree;
     }
 
-    private Map<String, List<Map<String, Float>>> generateResultsByMemorySize() {
+    private Map<String, List<Map<String, Float>>> generateResultsByMemorySize(
+            String functionLanguage, String memorySize) {
+
         Map<String, List<Map<String, Float>>> architectures = new HashMap<>();
         for (String architecture : LAMBDA_FUNCTION_ARCHITECTURES) {
-            architectures.put(architecture, generateResultsByArchitectureType());
+            architectures.put(
+                    architecture,
+                    generateResultsByArchitectureType(functionLanguage, memorySize, architecture));
         }
         return architectures;
     }
 
-    private List<Map<String, Float>> generateResultsByArchitectureType() {
+    private List<Map<String, Float>> generateResultsByArchitectureType(
+            String functionLanguage, String memorySize, String architecture) {
+
         List<Map<String, Float>> measurements = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            float[] lambdaGwResponse = lambdaFunctionGateway.callLambda("szokeb-java-fibonacci", "100");
+            float[] lambdaGwResponse = lambdaFunctionGateway.callLambda(
+                    functionLanguage, memorySize, architecture);
             Map<String, Float> actualTimes = new HashMap<>();
             actualTimes.put("Lambda execution time (ms)", lambdaGwResponse[0]);
             actualTimes.put("Lambda invoke time (ms)", lambdaGwResponse[1]);

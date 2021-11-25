@@ -12,12 +12,14 @@ import com.amazonaws.services.lambda.model.InvokeResult;
 
 import java.nio.charset.StandardCharsets;
 
-import static awslambda.gateway.aws.AWSCConstants.AWS_ACCESS_KEY_ID;
-import static awslambda.gateway.aws.AWSCConstants.AWS_SECRET_ACCESS_KEY;
+import static awslambda.gateway.aws.AWSConstants.*;
 
 public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
 
     private final AWSLambda lambda;
+    private String actualFunctionLanguage;
+    private String actualMemorySize;
+    private String actualArchitecture;
 
     public AWSLambdaFunctionGatewayImpl() {
         AWSCredentials credentials = new BasicAWSCredentials(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY);
@@ -27,12 +29,36 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
     }
 
     @Override
-    public float[] callLambda(String functionName, String payload) {
-        InvokeRequest lmbRequest = new InvokeRequest()
-                .withFunctionName(functionName)
-                .withPayload(payload)
-                .withInvocationType(InvocationType.RequestResponse);
+    public float[] callLambda(String functionLanguage, String memorySize, String architecture) {
+        refreshFunctionConfigurationsIfNeeded(functionLanguage, memorySize, architecture);
+        InvokeRequest lmbRequest = generateInvokeRequest();
+        return doCallLambda(lmbRequest);
+    }
 
+    private void refreshFunctionConfigurationsIfNeeded(String functionLanguage, String memorySize,
+                                                       String architecture) {
+        if (isFunctionConfigurationChanged(functionLanguage, memorySize, architecture)) {
+            actualFunctionLanguage = functionLanguage;
+            actualMemorySize = memorySize;
+            actualArchitecture = architecture;
+            //todo: config change
+        }
+    }
+
+    private boolean isFunctionConfigurationChanged(String functionLanguage, String memorySize, String architecture) {
+        return !functionLanguage.equals(actualFunctionLanguage) ||
+                !memorySize.equals(actualMemorySize) ||
+                !architecture.equals(actualArchitecture);
+    }
+
+    private InvokeRequest generateInvokeRequest() {
+        return new InvokeRequest()
+                .withFunctionName("szokeb-" + actualFunctionLanguage + "-fibonacci")
+                .withPayload(NUMBERS_OF_FIBONACCIS_TO_CALCULATE)
+                .withInvocationType(InvocationType.RequestResponse);
+    }
+
+    private float[] doCallLambda(InvokeRequest lmbRequest) {
         long startTime = System.nanoTime();
         InvokeResult lmbResult = lambda.invoke(lmbRequest);
         long endTime = System.nanoTime();

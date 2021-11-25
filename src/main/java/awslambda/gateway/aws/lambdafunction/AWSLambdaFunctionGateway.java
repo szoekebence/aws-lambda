@@ -2,6 +2,6 @@ package awslambda.gateway.aws.lambdafunction;
 
 public interface AWSLambdaFunctionGateway {
 
-    float[] callLambda(String functionName, String payload);
+    float[] callLambda(String functionLanguage, String memorySize, String architecture);
 
 }

@@ -5,7 +5,7 @@ import awslambda.entity.LambdaExecutionTimes;
 import awslambda.gateway.aws.dynamodb.DynamoDbGatewayImpl;
 import awslambda.gateway.aws.lambdafunction.AWSLambdaFunctionGatewayImpl;
 
-import static awslambda.gateway.aws.AWSCConstants.LAMBDA_FUNCTION_LANGUAGES;
+import static awslambda.gateway.aws.AWSConstants.LAMBDA_FUNCTION_LANGUAGES;
 
 public class Main {
 
@@ -18,7 +18,7 @@ public class Main {
 
             LambdaExecutionTimes item = new LambdaExecutionTimes();
             item.functionLanguage = functionLanguage;
-            item.results = resultGenerator.generateResultsByLambdaFunctionLanguage();
+            item.results = resultGenerator.generateResultsByLambdaFunctionLanguage(functionLanguage);
 
             dynamoDbGateway.saveExecution(item);
         }
