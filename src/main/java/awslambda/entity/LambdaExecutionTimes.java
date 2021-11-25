@@ -11,7 +11,7 @@ import java.util.Map;
 public class LambdaExecutionTimes {
 
     public String functionLanguage;
-    public Map<String, Map<String, List<Map<String, Float>>>> memorySize;
+    public Map<String, Map<String, Map<String, List<Map<String, Float>>>>> results;
 
     @DynamoDBHashKey(attributeName = "functionLanguage")
     public String getFunctionLanguage() {
@@ -23,12 +23,12 @@ public class LambdaExecutionTimes {
     }
 
     @DynamoDBAttribute(attributeName = "memorySize")
-    public Map<String, Map<String, List<Map<String, Float>>>> getMemorySize() {
-        return memorySize;
+    public Map<String, Map<String, Map<String, List<Map<String, Float>>>>> getResults() {
+        return results;
     }
 
-    public void setMemorySize(Map<String, Map<String, List<Map<String, Float>>>> memorySize) {
-        this.memorySize = memorySize;
+    public void setResults(Map<String, Map<String, Map<String, List<Map<String, Float>>>>> results) {
+        this.results = results;
     }
 
     public LambdaExecutionTimes() {
