@@ -7,6 +7,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.AWSLambda;
 import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
 import com.amazonaws.services.lambda.model.*;
+import org.awaitility.Awaitility;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 
 import static awslambda.gateway.aws.AWSConstants.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
 
@@ -33,21 +35,30 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
     @Override
     public void configurateLambdaFunction(String functionLanguage, String memorySize, String architecture) {
         updateFunctionConfig(functionLanguage, memorySize);
+        waitForLambdaFunctionReadiness();
         updateFunctionCode(architecture);
-    }
-
-    @Override
-    public boolean checkAvailability() {
-        GetFunctionConfigurationRequest request = new GetFunctionConfigurationRequest()
-                .withFunctionName(actualFunctionName);
-        GetFunctionConfigurationResult response = AWSLambda.getFunctionConfiguration(request);
-        return "Active".equals(response.getState());
+        waitForLambdaFunctionReadiness();
     }
 
     @Override
     public float[] callLambda() {
         InvokeRequest lmbRequest = generateInvokeRequest();
         return doCallLambda(lmbRequest);
+    }
+
+    private void waitForLambdaFunctionReadiness() {
+        Awaitility.with()
+                .pollInterval(1, SECONDS)
+                .atMost(10, SECONDS)
+                .await()
+                .until(this::checkAvailability);
+    }
+
+    private boolean checkAvailability() {
+        GetFunctionConfigurationRequest request = new GetFunctionConfigurationRequest()
+                .withFunctionName(actualFunctionName);
+        GetFunctionConfigurationResult response = AWSLambda.getFunctionConfiguration(request);
+        return "Active".equals(response.getState());
     }
 
     private void updateFunctionConfig(String functionLanguage, String memorySize) {
