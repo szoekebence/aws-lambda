@@ -1,14 +1,15 @@
 package awslambda.core;
 
 import awslambda.gateway.aws.lambdafunction.AWSLambdaFunctionGateway;
+import org.awaitility.Awaitility;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static awslambda.gateway.aws.AWSConstants.LAMBDA_FUNCTION_ARCHITECTURES;
-import static awslambda.gateway.aws.AWSConstants.LAMBDA_FUNCTION_MEMORY_SIZE;
+import static awslambda.gateway.aws.AWSConstants.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class ResultGenerator {
 
@@ -27,7 +28,7 @@ public class ResultGenerator {
             Map<String, Map<String, List<Map<String, Float>>>> architectureTree = new HashMap<>();
             architectureTree.put("architectures", generateResultsByMemorySize(functionLanguage, memorySize));
             memorySizes.put(memorySize, architectureTree);
-            memorySizesTree.put("memorySizes", memorySizes);
+            memorySizesTree.put("memorySizes (MB)", memorySizes);
         }
         return memorySizesTree;
     }
@@ -47,10 +48,12 @@ public class ResultGenerator {
     private List<Map<String, Float>> generateResultsByArchitectureType(
             String functionLanguage, String memorySize, String architecture) {
 
+        configurateLambdaFunction(functionLanguage, memorySize, architecture);
+        waitForLambdaFunctionReadiness(functionLanguage);
+
         List<Map<String, Float>> measurements = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            float[] lambdaGwResponse = lambdaFunctionGateway.callLambda(
-                    functionLanguage, memorySize, architecture);
+        for (int i = 0; i < NUMBER_OF_CALLS; i++) {
+            float[] lambdaGwResponse = callLambdaFunctionPeridically();
             Map<String, Float> actualTimes = new HashMap<>();
             actualTimes.put("Lambda execution time (ms)", lambdaGwResponse[0]);
             actualTimes.put("Lambda invoke time (ms)", lambdaGwResponse[1]);
@@ -58,6 +61,22 @@ public class ResultGenerator {
             measurements.add(actualTimes);
         }
         return measurements;
+    }
+
+    private float[] callLambdaFunctionPeridically() {
+        return lambdaFunctionGateway.callLambda();
+    }
+
+    private void configurateLambdaFunction(String functionLanguage, String memorySize, String architecture) {
+        lambdaFunctionGateway.configurateLambdaFunction(functionLanguage, memorySize, architecture);
+    }
+
+    private void waitForLambdaFunctionReadiness(String functionLanguage) {
+        Awaitility.with()
+                .pollInterval(3, SECONDS)
+                .atMost(10, SECONDS)
+                .await()
+                .until(() -> (!lambdaFunctionGateway.checkAvailability()));
     }
 
 }

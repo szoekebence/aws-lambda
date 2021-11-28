@@ -6,61 +6,94 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.AWSLambda;
 import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
-import com.amazonaws.services.lambda.model.InvocationType;
-import com.amazonaws.services.lambda.model.InvokeRequest;
-import com.amazonaws.services.lambda.model.InvokeResult;
+import com.amazonaws.services.lambda.model.*;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 
 import static awslambda.gateway.aws.AWSConstants.*;
 
 public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
 
-    private final AWSLambda lambda;
-    private String actualFunctionLanguage;
-    private String actualMemorySize;
-    private String actualArchitecture;
+    private final AWSLambda AWSLambda;
+    private String actualFunctionName;
 
     public AWSLambdaFunctionGatewayImpl() {
         AWSCredentials credentials = new BasicAWSCredentials(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY);
-        lambda = AWSLambdaClientBuilder.standard()
+        AWSLambda = AWSLambdaClientBuilder.standard()
                 .withRegion(Regions.EU_CENTRAL_1)
                 .withCredentials(new AWSStaticCredentialsProvider(credentials)).build();
     }
 
     @Override
-    public float[] callLambda(String functionLanguage, String memorySize, String architecture) {
-        refreshFunctionConfigurationsIfNeeded(functionLanguage, memorySize, architecture);
+    public void configurateLambdaFunction(String functionLanguage, String memorySize, String architecture) {
+        updateFunctionConfig(functionLanguage, memorySize);
+        updateFunctionCode(architecture);
+    }
+
+    @Override
+    public boolean checkAvailability() {
+        GetFunctionConfigurationRequest request = new GetFunctionConfigurationRequest()
+                .withFunctionName(actualFunctionName);
+        GetFunctionConfigurationResult response = AWSLambda.getFunctionConfiguration(request);
+        return "Active".equals(response.getState());
+    }
+
+    @Override
+    public float[] callLambda() {
         InvokeRequest lmbRequest = generateInvokeRequest();
         return doCallLambda(lmbRequest);
     }
 
-    private void refreshFunctionConfigurationsIfNeeded(String functionLanguage, String memorySize,
-                                                       String architecture) {
-        if (isFunctionConfigurationChanged(functionLanguage, memorySize, architecture)) {
-            actualFunctionLanguage = functionLanguage;
-            actualMemorySize = memorySize;
-            actualArchitecture = architecture;
-            //todo: config change
+    private void updateFunctionConfig(String functionLanguage, String memorySize) {
+        UpdateFunctionConfigurationRequest request = new UpdateFunctionConfigurationRequest()
+                .withFunctionName("szokeb-" + functionLanguage + "-fibonacci")
+                .withMemorySize(Integer.valueOf(memorySize));
+        UpdateFunctionConfigurationResult response = AWSLambda.updateFunctionConfiguration(request);
+        actualFunctionName = response.getFunctionName();
+    }
+
+    private void updateFunctionCode(String architecture) {
+        UpdateFunctionCodeRequest updateFunctionCodeRequest = new UpdateFunctionCodeRequest()
+                .withFunctionName(actualFunctionName)
+                .withArchitectures(architecture)
+                .withZipFile(generateZipAsByteBuffer());
+        AWSLambda.updateFunctionCode(updateFunctionCodeRequest);
+    }
+
+    private ByteBuffer generateZipAsByteBuffer() {
+        try (RandomAccessFile raf = new RandomAccessFile(
+                generateCompressedFunctionCode(), "r"); FileChannel channel = raf.getChannel()) {
+            MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
+            buffer.load();
+            return buffer;
+        } catch (IOException e) {
+            throw new RuntimeException("Zip file reading failed!");
         }
     }
 
-    private boolean isFunctionConfigurationChanged(String functionLanguage, String memorySize, String architecture) {
-        return !functionLanguage.equals(actualFunctionLanguage) ||
-                !memorySize.equals(actualMemorySize) ||
-                !architecture.equals(actualArchitecture);
+    private File generateCompressedFunctionCode() {
+        if ("szokeb-java-fibonacci".equals(actualFunctionName)) {
+            return new File("src/main/resources/Function_Code_Archives/" + actualFunctionName + ".jar");
+        }
+        return new File("src/main/resources/Function_Code_Archives/" + actualFunctionName + ".zip");
     }
 
     private InvokeRequest generateInvokeRequest() {
         return new InvokeRequest()
-                .withFunctionName("szokeb-" + actualFunctionLanguage + "-fibonacci")
+                .withFunctionName(actualFunctionName)
                 .withPayload(NUMBERS_OF_FIBONACCIS_TO_CALCULATE)
                 .withInvocationType(InvocationType.RequestResponse);
     }
 
     private float[] doCallLambda(InvokeRequest lmbRequest) {
         long startTime = System.nanoTime();
-        InvokeResult lmbResult = lambda.invoke(lmbRequest);
+        InvokeResult lmbResult = AWSLambda.invoke(lmbRequest);
         long endTime = System.nanoTime();
         float lambdaExecTime = Float.parseFloat(new String(lmbResult.getPayload().array(), StandardCharsets.UTF_8));
 

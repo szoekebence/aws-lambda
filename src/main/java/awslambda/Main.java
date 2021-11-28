@@ -15,11 +15,9 @@ public class Main {
         DynamoDbGatewayImpl dynamoDbGateway = new DynamoDbGatewayImpl();
 
         for (String functionLanguage : LAMBDA_FUNCTION_LANGUAGES) {
-
             LambdaExecutionTimes item = new LambdaExecutionTimes();
             item.functionLanguage = functionLanguage;
             item.results = resultGenerator.generateResultsByLambdaFunctionLanguage(functionLanguage);
-
             dynamoDbGateway.saveExecution(item);
         }
     }

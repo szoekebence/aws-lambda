@@ -1,5 +1,3 @@
-package awslambda.functionhandler;
-
 public class JavaFibonacciFunctionHandler {
 
     public long handleRequest(int n) {
@@ -9,6 +7,7 @@ public class JavaFibonacciFunctionHandler {
             long next = f1 + f2;
             f1 = f2;
             f2 = next;
+            System.out.println(f1 + "\n");
         }
         return (System.nanoTime() - startTime);
     }
