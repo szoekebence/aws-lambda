@@ -17,7 +17,8 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 
-import static awslambda.gateway.aws.AWSConstants.*;
+import static awslambda.gateway.aws.AWSConstants.AWS_ACCESS_KEY_ID;
+import static awslambda.gateway.aws.AWSConstants.AWS_SECRET_ACCESS_KEY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
@@ -89,7 +90,7 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
     }
 
     private File generateCompressedFunctionCode() {
-        if ("szokeb-java-fibonacci".equals(actualFunctionName)) {
+        if (actualFunctionName.contains("java")) {
             return new File("src/main/resources/Function_Code_Archives/" + actualFunctionName + ".jar");
         }
         return new File("src/main/resources/Function_Code_Archives/" + actualFunctionName + ".zip");
@@ -98,7 +99,6 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
     private InvokeRequest generateInvokeRequest() {
         return new InvokeRequest()
                 .withFunctionName(actualFunctionName)
-                .withPayload(NUMBERS_OF_FIBONACCIS_TO_CALCULATE)
                 .withInvocationType(InvocationType.RequestResponse);
     }
 
@@ -108,9 +108,22 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
         long endTime = System.nanoTime();
         float lambdaExecTime = Float.parseFloat(new String(lmbResult.getPayload().array(), StandardCharsets.UTF_8));
 
-        return new float[]{
-                (lambdaExecTime / 1000000F),                                //Lambda execution time in ms
-                (((endTime - startTime) - lambdaExecTime) / 1000000F),      //Invoke time in ms
-                ((endTime - startTime) / 1000000F)};                        //Total time in ms
+        return getResultsInMillis(startTime, endTime, lambdaExecTime);
+    }
+
+    private float[] getResultsInMillis(long startTime, long endTime, float lambdaExecTime) {
+        if (actualFunctionName.contains("java")) {                              //returns with ns
+            return new float[]{
+                    (lambdaExecTime / 1000000F),                                //Lambda execution time in ms
+                    (((endTime - startTime) - lambdaExecTime) / 1000000F),      //Invoke time in ms
+                    ((endTime - startTime) / 1000000F)};                        //Total time in ms
+        }
+        if (actualFunctionName.contains("python")) {                            //returns with s
+            return new float[]{
+                    (lambdaExecTime * 1000F),                                   //Lambda execution time in ms
+                    (((endTime - startTime) - lambdaExecTime) / 1000000F),      //Invoke time in ms
+                    ((endTime - startTime) / 1000000F)};                        //Total time in ms
+        }
+        throw new RuntimeException("Unexpected Lambda language to calculate results in millis.");
     }
 }
