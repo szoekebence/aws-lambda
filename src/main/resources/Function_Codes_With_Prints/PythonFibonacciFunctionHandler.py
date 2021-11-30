@@ -9,4 +9,4 @@ def requestHandler(event, context):
         next = f1 + f2
         f1 = f2
         f2 = next
-    return time.time() - startTime
+    return (time.time() - startTime) * 1000

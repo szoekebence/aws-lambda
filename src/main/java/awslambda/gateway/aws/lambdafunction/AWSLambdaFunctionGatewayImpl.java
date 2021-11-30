@@ -103,27 +103,14 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
     }
 
     private float[] doCallLambda(InvokeRequest lmbRequest) {
-        long startTime = System.nanoTime();
+        float startTime = System.nanoTime() / 1000000F;
         InvokeResult lmbResult = AWSLambda.invoke(lmbRequest);
-        long endTime = System.nanoTime();
+        float endTime = System.nanoTime() / 1000000F;
         float lambdaExecTime = Float.parseFloat(new String(lmbResult.getPayload().array(), StandardCharsets.UTF_8));
 
-        return getResultsInMillis(startTime, endTime, lambdaExecTime);
-    }
-
-    private float[] getResultsInMillis(long startTime, long endTime, float lambdaExecTime) {
-        if (actualFunctionName.contains("java")) {                              //returns with ns
-            return new float[]{
-                    (lambdaExecTime / 1000000F),                                //Lambda execution time in ms
-                    (((endTime - startTime) - lambdaExecTime) / 1000000F),      //Invoke time in ms
-                    ((endTime - startTime) / 1000000F)};                        //Total time in ms
-        }
-        if (actualFunctionName.contains("python")) {                            //returns with s
-            return new float[]{
-                    (lambdaExecTime * 1000F),                                   //Lambda execution time in ms
-                    (((endTime - startTime) - lambdaExecTime) / 1000000F),      //Invoke time in ms
-                    ((endTime - startTime) / 1000000F)};                        //Total time in ms
-        }
-        throw new RuntimeException("Unexpected Lambda language to calculate results in millis.");
+        return new float[]{
+                lambdaExecTime,                                             //Lambda execution time in ms
+                ((endTime - startTime) - lambdaExecTime),                   //Invoke time in ms
+                (endTime - startTime)};                                     //Total time in ms
     }
 }
