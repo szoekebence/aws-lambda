@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static awslambda.gateway.aws.AWSConstants.*;
 
@@ -55,6 +56,11 @@ public class ResultGenerator {
             actualTimes.put("Lambda invoke time (ms)", lambdaGwResponse[1]);
             actualTimes.put("Total time (ms)", lambdaGwResponse[2]);
             measurements.add(actualTimes);
+            try {//todo: ez kell biztos? valami idő számolási probléma van
+                TimeUnit.SECONDS.sleep(5);
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Sleep operation has thrown exception!");
+            }
         }
         return measurements;
     }

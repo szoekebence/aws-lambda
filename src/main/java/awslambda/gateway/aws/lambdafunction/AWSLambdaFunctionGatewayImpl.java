@@ -91,9 +91,9 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
 
     private File generateCompressedFunctionCode() {
         if (actualFunctionName.contains("java")) {
-            return new File("src/main/resources/Function_Code_Archives/" + actualFunctionName + ".jar");
+            return new File("src/main/resources/Function_Code_Archives_1000/" + actualFunctionName + ".jar");
         }
-        return new File("src/main/resources/Function_Code_Archives/" + actualFunctionName + ".zip");
+        return new File("src/main/resources/Function_Code_Archives_1000/" + actualFunctionName + ".zip");
     }
 
     private InvokeRequest generateInvokeRequest() {
@@ -108,9 +108,10 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
         float endTime = System.nanoTime() / 1000000F;
         float lambdaExecTime = Float.parseFloat(new String(lmbResult.getPayload().array(), StandardCharsets.UTF_8));
 
-        return new float[]{
-                lambdaExecTime,                                             //Lambda execution time in ms
-                ((endTime - startTime) - lambdaExecTime),                   //Invoke time in ms
-                (endTime - startTime)};                                     //Total time in ms
+        return new float[]{//todo: megvizsgálni időszámítást
+                lambdaExecTime,                                                             //Lambda execution time in ms
+                (endTime - startTime) > lambdaExecTime
+                        ? ((endTime - startTime) - lambdaExecTime) : (endTime - startTime), //Invoke time in ms
+                (endTime + startTime)};                                                     //Total time in ms
     }
 }
