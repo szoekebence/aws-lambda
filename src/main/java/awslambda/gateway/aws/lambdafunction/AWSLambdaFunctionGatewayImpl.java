@@ -16,6 +16,8 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 
 import static awslambda.gateway.aws.AWSConstants.AWS_ACCESS_KEY_ID;
 import static awslambda.gateway.aws.AWSConstants.AWS_SECRET_ACCESS_KEY;
@@ -91,9 +93,9 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
 
     private File generateCompressedFunctionCode() {
         if (actualFunctionName.contains("java")) {
-            return new File("src/main/resources/Function_Code_Archives_1000/" + actualFunctionName + ".jar");
+            return new File("src/main/resources/Function_Code_Archives_10000/" + actualFunctionName + ".jar");
         }
-        return new File("src/main/resources/Function_Code_Archives_1000/" + actualFunctionName + ".zip");
+        return new File("src/main/resources/Function_Code_Archives_10000/" + actualFunctionName + ".zip");
     }
 
     private InvokeRequest generateInvokeRequest() {
@@ -103,15 +105,14 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
     }
 
     private float[] doCallLambda(InvokeRequest lmbRequest) {
-        float startTime = System.nanoTime() / 1000000F;
+        Instant startTime = Instant.now();
         InvokeResult lmbResult = AWSLambda.invoke(lmbRequest);
-        float endTime = System.nanoTime() / 1000000F;
+        Instant endTime = Instant.now();
         float lambdaExecTime = Float.parseFloat(new String(lmbResult.getPayload().array(), StandardCharsets.UTF_8));
 
         return new float[]{//todo: megvizsgálni időszámítást
-                lambdaExecTime,                                                             //Lambda execution time in ms
-                (endTime - startTime) > lambdaExecTime
-                        ? ((endTime - startTime) - lambdaExecTime) : (endTime - startTime), //Invoke time in ms
-                (endTime + startTime)};                                                     //Total time in ms
+                lambdaExecTime,                                                                     //Lambda execution time in ms
+                ((Duration.between(startTime, endTime).toNanos() / 1000000.0F) - lambdaExecTime),   //Invoke time in ms
+                (Duration.between(startTime, endTime).toNanos() / 1000000.0F)};                     //Total time in ms
     }
 }

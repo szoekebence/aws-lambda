@@ -2,7 +2,7 @@ exports.handler = async () => {
     const time = process.hrtime();
     var f1 = 0;
     var f2 = 1;
-    for (var i = 1; i < 1000; i++) {
+    for (var i = 1; i < 10000; i++) {
         var next = f1 + f2;
         f1 = f2;
         f2 = next;
