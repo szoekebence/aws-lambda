@@ -7,7 +7,11 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.AWSLambda;
 import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
 import com.amazonaws.services.lambda.model.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.awaitility.Awaitility;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,6 +22,8 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import static awslambda.gateway.aws.AWSConstants.AWS_ACCESS_KEY_ID;
 import static awslambda.gateway.aws.AWSConstants.AWS_SECRET_ACCESS_KEY;
@@ -25,7 +31,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
 
+    private static final TypeReference<Map<String, Float>> TYPE_REF = new TypeReference<>() {
+    };
     private final AWSLambda AWSLambda;
+    private final ObjectMapper objectMapper;
     private String actualFunctionName;
 
     public AWSLambdaFunctionGatewayImpl() {
@@ -33,6 +42,7 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
         AWSLambda = AWSLambdaClientBuilder.standard()
                 .withRegion(Regions.EU_CENTRAL_1)
                 .withCredentials(new AWSStaticCredentialsProvider(credentials)).build();
+        objectMapper = Jackson2ObjectMapperBuilder.json().createXmlMapper(false).build();
     }
 
     @Override
@@ -82,7 +92,7 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
 
     private ByteBuffer generateZipAsByteBuffer() {
         try (RandomAccessFile raf = new RandomAccessFile(
-                generateCompressedFunctionCode(), "r"); FileChannel channel = raf.getChannel()) {
+                generateArchivedFunctionCode(), "r"); FileChannel channel = raf.getChannel()) {
             MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
             buffer.load();
             return buffer;
@@ -91,11 +101,11 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
         }
     }
 
-    private File generateCompressedFunctionCode() {
+    private File generateArchivedFunctionCode() {
         if (actualFunctionName.contains("java")) {
             return new File("src/main/resources/Function_Code_Archives_10000/" + actualFunctionName + ".jar");
         }
-        return new File("src/main/resources/Function_Code_Archives_10000/" + actualFunctionName + ".zip");
+        return new File("src/main/resources/Function_Code_Archives_10/" + actualFunctionName + ".zip");
     }
 
     private InvokeRequest generateInvokeRequest() {
@@ -108,11 +118,28 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
         Instant startTime = Instant.now();
         InvokeResult lmbResult = AWSLambda.invoke(lmbRequest);
         Instant endTime = Instant.now();
-        float lambdaExecTime = Float.parseFloat(new String(lmbResult.getPayload().array(), StandardCharsets.UTF_8));
+        float lambdaExecTime;
+        if (Stream.of("szokeb-java-fibonacci", "szokeb-python-fibonacci", "szokeb-nodejs-fibonacci")
+                .anyMatch(x -> x.equals(actualFunctionName))) {
+            lambdaExecTime = Float.parseFloat(new String(lmbResult.getPayload().array(), StandardCharsets.UTF_8));
+        } else if ("szokeb-ruby-fibonacci".equals(actualFunctionName)) {
+            lambdaExecTime = collectRubyFunctionResponse(lmbResult);
+        } else {
+            throw new RuntimeException("Unexpected Lambda Function name!");
+        }
 
         return new float[]{
                 lambdaExecTime,                                                                     //Lambda execution time in ms
                 ((Duration.between(startTime, endTime).toNanos() / 1000000.0F) - lambdaExecTime),   //Invoke time in ms
                 (Duration.between(startTime, endTime).toNanos() / 1000000.0F)};                     //Total time in ms
+    }
+
+    private float collectRubyFunctionResponse(InvokeResult lmbResult) {
+        String response = new String(lmbResult.getPayload().array(), StandardCharsets.UTF_8);
+        try {
+            return objectMapper.readValue(response, TYPE_REF).get("body");
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Exception occurred while converting json to map.");
+        }
     }
 }

@@ -35,6 +35,11 @@
             <artifactId>awaitility</artifactId>
             <version>4.1.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <version>5.3.13</version>
+        </dependency>
     </dependencies>
 
     <build>
