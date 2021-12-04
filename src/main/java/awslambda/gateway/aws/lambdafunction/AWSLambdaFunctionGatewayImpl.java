@@ -105,7 +105,7 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
         if (actualFunctionName.contains("java")) {
             return new File("src/main/resources/Function_Code_Archives_10000/" + actualFunctionName + ".jar");
         }
-        return new File("src/main/resources/Function_Code_Archives_10/" + actualFunctionName + ".zip");
+        return new File("src/main/resources/Function_Code_Archives_10000/" + actualFunctionName + ".zip");
     }
 
     private InvokeRequest generateInvokeRequest() {
