@@ -48,7 +48,7 @@ public class ResultGenerator {
 
         configurateLambdaFunction(functionLanguage, memorySize, architecture);
         List<Map<String, Float>> measurements = new ArrayList<>();
-        for (int i = 0; i < NUMBER_OF_CALLS; i++) {
+        for (int i = 0; i < NUMBER_OF_FUNCTION_CALLS_PER_CONFIGURATION; i++) {
             float[] lambdaGwResponse = lambdaFunctionGateway.callLambda();
             Map<String, Float> actualTimes = new HashMap<>();
             actualTimes.put("Lambda execution time (ms)", lambdaGwResponse[0]);

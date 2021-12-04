@@ -110,7 +110,7 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
         Instant endTime = Instant.now();
         float lambdaExecTime = Float.parseFloat(new String(lmbResult.getPayload().array(), StandardCharsets.UTF_8));
 
-        return new float[]{//todo: megvizsgálni időszámítást
+        return new float[]{
                 lambdaExecTime,                                                                     //Lambda execution time in ms
                 ((Duration.between(startTime, endTime).toNanos() / 1000000.0F) - lambdaExecTime),   //Invoke time in ms
                 (Duration.between(startTime, endTime).toNanos() / 1000000.0F)};                     //Total time in ms
