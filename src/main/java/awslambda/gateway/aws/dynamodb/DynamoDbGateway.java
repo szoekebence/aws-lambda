@@ -1,8 +1,8 @@
 package awslambda.gateway.aws.dynamodb;
 
-import awslambda.entity.LambdaExecutionTimes;
+import awslambda.entity.LambdaExecutionTime;
 
 public interface DynamoDbGateway {
 
-    public void saveExecution(LambdaExecutionTimes executionTimes);
+    public void saveExecution(LambdaExecutionTime executionTimes);
 }

@@ -1,5 +1,6 @@
 package awslambda.gateway.aws.lambdafunction;
 
+import awslambda.entity.LambdaExecutionTime;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -25,8 +26,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static awslambda.gateway.aws.AWSConstants.AWS_ACCESS_KEY_ID;
-import static awslambda.gateway.aws.AWSConstants.AWS_SECRET_ACCESS_KEY;
+import static awslambda.gateway.aws.AWSConstants.*;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
@@ -36,6 +36,8 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
     private final AWSLambda AWSLambda;
     private final ObjectMapper objectMapper;
     private String actualFunctionName;
+    private String actualMemorySize;
+    private String actualArchitecture;
 
     public AWSLambdaFunctionGatewayImpl() {
         AWSCredentials credentials = new BasicAWSCredentials(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY);
@@ -54,7 +56,7 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
     }
 
     @Override
-    public float[] callLambda() {
+    public LambdaExecutionTime callLambda() {
         InvokeRequest lmbRequest = generateInvokeRequest();
         return doCallLambda(lmbRequest);
     }
@@ -80,6 +82,7 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
                 .withMemorySize(Integer.valueOf(memorySize));
         UpdateFunctionConfigurationResult response = AWSLambda.updateFunctionConfiguration(request);
         actualFunctionName = response.getFunctionName();
+        actualMemorySize = String.valueOf(response.getMemorySize());
     }
 
     private void updateFunctionCode(String architecture) {
@@ -87,7 +90,8 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
                 .withFunctionName(actualFunctionName)
                 .withArchitectures(architecture)
                 .withZipFile(generateZipAsByteBuffer());
-        AWSLambda.updateFunctionCode(updateFunctionCodeRequest);
+        UpdateFunctionCodeResult response = AWSLambda.updateFunctionCode(updateFunctionCodeRequest);
+        actualArchitecture = response.getArchitectures().get(0);
     }
 
     private ByteBuffer generateZipAsByteBuffer() {
@@ -114,7 +118,7 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
                 .withInvocationType(InvocationType.RequestResponse);
     }
 
-    private float[] doCallLambda(InvokeRequest lmbRequest) {
+    private LambdaExecutionTime doCallLambda(InvokeRequest lmbRequest) {
         Instant startTime = Instant.now();
         InvokeResult lmbResult = AWSLambda.invoke(lmbRequest);
         Instant endTime = Instant.now();
@@ -128,10 +132,17 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
             throw new RuntimeException("Unexpected Lambda Function name!");
         }
 
-        return new float[]{
-                lambdaExecTime,                                                                     //Lambda execution time in ms
-                ((Duration.between(startTime, endTime).toNanos() / 1000000.0F) - lambdaExecTime),   //Invoke time in ms
-                (Duration.between(startTime, endTime).toNanos() / 1000000.0F)};                     //Total time in ms
+        return new LambdaExecutionTime()
+                .setFunctionLanguage(generateActualFunctionLanguage())
+                .setMemorySize(actualMemorySize)
+                .setArchitecture(actualArchitecture)
+                .setExecutionTime(lambdaExecTime)                                                               //Lambda execution time in ms
+                .setInvokeTime((Duration.between(startTime, endTime).toNanos() / 1000000.0F) - lambdaExecTime)  //Invoke time in ms
+                .setTotalTime(Duration.between(startTime, endTime).toNanos() / 1000000.0F);                     //Total time in ms
+    }
+
+    private String generateActualFunctionLanguage() {
+        return LAMBDA_FUNCTION_LANGUAGES.stream().filter(x -> actualFunctionName.contains(x)).findFirst().get();
     }
 
     private float collectRubyFunctionResponse(InvokeResult lmbResult) {
