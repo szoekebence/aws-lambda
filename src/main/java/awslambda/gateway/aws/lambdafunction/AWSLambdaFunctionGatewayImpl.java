@@ -61,6 +61,15 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
         return doCallLambda(lmbRequest);
     }
 
+    private void updateFunctionConfig(String functionLanguage, String memorySize) {
+        UpdateFunctionConfigurationRequest request = new UpdateFunctionConfigurationRequest()
+                .withFunctionName("szokeb-" + functionLanguage + "-fibonacci")
+                .withMemorySize(Integer.valueOf(memorySize));
+        UpdateFunctionConfigurationResult response = AWSLambda.updateFunctionConfiguration(request);
+        actualFunctionName = response.getFunctionName();
+        actualMemorySize = String.valueOf(response.getMemorySize());
+    }
+
     private void waitForLambdaFunctionReadiness() {
         Awaitility.with()
                 .pollInterval(1, SECONDS)
@@ -76,21 +85,12 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
         return "Active".equals(response.getState());
     }
 
-    private void updateFunctionConfig(String functionLanguage, String memorySize) {
-        UpdateFunctionConfigurationRequest request = new UpdateFunctionConfigurationRequest()
-                .withFunctionName("szokeb-" + functionLanguage + "-fibonacci")
-                .withMemorySize(Integer.valueOf(memorySize));
-        UpdateFunctionConfigurationResult response = AWSLambda.updateFunctionConfiguration(request);
-        actualFunctionName = response.getFunctionName();
-        actualMemorySize = String.valueOf(response.getMemorySize());
-    }
-
     private void updateFunctionCode(String architecture) {
-        UpdateFunctionCodeRequest updateFunctionCodeRequest = new UpdateFunctionCodeRequest()
+        UpdateFunctionCodeRequest request = new UpdateFunctionCodeRequest()
                 .withFunctionName(actualFunctionName)
                 .withArchitectures(architecture)
                 .withZipFile(generateZipAsByteBuffer());
-        UpdateFunctionCodeResult response = AWSLambda.updateFunctionCode(updateFunctionCodeRequest);
+        UpdateFunctionCodeResult response = AWSLambda.updateFunctionCode(request);
         actualArchitecture = response.getArchitectures().get(0);
     }
 
@@ -122,15 +122,7 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
         Instant startTime = Instant.now();
         InvokeResult lmbResult = AWSLambda.invoke(lmbRequest);
         Instant endTime = Instant.now();
-        float lambdaExecTime;
-        if (Stream.of("szokeb-java-fibonacci", "szokeb-python-fibonacci", "szokeb-nodejs-fibonacci")
-                .anyMatch(x -> x.equals(actualFunctionName))) {
-            lambdaExecTime = Float.parseFloat(new String(lmbResult.getPayload().array(), StandardCharsets.UTF_8));
-        } else if ("szokeb-ruby-fibonacci".equals(actualFunctionName)) {
-            lambdaExecTime = collectRubyFunctionResponse(lmbResult);
-        } else {
-            throw new RuntimeException("Unexpected Lambda Function name!");
-        }
+        float lambdaExecTime = generateLambdaResponse(lmbResult);
 
         return new LambdaExecutionTime()
                 .setFunctionLanguage(generateActualFunctionLanguage())
@@ -139,6 +131,17 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
                 .setExecutionTime(lambdaExecTime)                                                               //Lambda execution time in ms
                 .setInvokeTime((Duration.between(startTime, endTime).toNanos() / 1000000.0F) - lambdaExecTime)  //Invoke time in ms
                 .setTotalTime(Duration.between(startTime, endTime).toNanos() / 1000000.0F);                     //Total time in ms
+    }
+
+    private float generateLambdaResponse(InvokeResult lmbResult) {
+        if (Stream.of("java", "python", "nodejs").anyMatch(x -> actualFunctionName.contains(x))) {
+            return Float.parseFloat(new String(lmbResult.getPayload().array(), StandardCharsets.UTF_8));
+        }
+        if (actualFunctionName.contains("ruby")) {
+            return collectRubyFunctionResponse(lmbResult);
+        } else {
+            throw new RuntimeException("Unexpected Lambda Function name!");
+        }
     }
 
     private String generateActualFunctionLanguage() {
