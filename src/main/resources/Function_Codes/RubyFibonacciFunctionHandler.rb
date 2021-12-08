@@ -3,13 +3,14 @@ require 'benchmark'
 
 def lambda_handler(event:, context:)
     time = Benchmark.realtime {
-        f1 = 0
-        f2 = 1
-        10000.times do
-            nextFib = f1 + f2
-            f1 = f2
-            f2 = nextFib
-        end
+        x = fibonacci(28)
     }
     { statusCode: 200, body: time * 1000 }
+end
+
+def fibonacci(n)
+    if n <= 1
+        return n
+    end
+    (fibonacci(n-1)+fibonacci(n-2))
 end

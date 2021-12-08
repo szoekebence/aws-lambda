@@ -1,11 +1,13 @@
+import json
 import time
 
 def requestHandler(event, context):
-    startTime = time.time()
-    f1 = 0
-    f2 = 1
-    for i in range(10000):
-        next = f1 + f2
-        f1 = f2
-        f2 = next
-    return (time.time() - startTime) * 1000
+    start_time = time.time()
+    x = fibonacci(28)
+    duration = time.time() - start_time
+    return duration * 1000
+
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return (fibonacci(n-1)+fibonacci(n-2))

@@ -1,12 +1,13 @@
 exports.handler = async () => {
     const time = process.hrtime();
-    var f1 = 0;
-    var f2 = 1;
-    for (var i = 1; i < 10000; i++) {
-        var next = f1 + f2;
-        f1 = f2;
-        f2 = next;
-    }
+    var x = fibonacci(28);
     const diff = process.hrtime(time);
     return (diff[0] * 1000000000 + diff[1]) * 0.000001;
 };
+
+function fibonacci(n) {
+    if (n <= 1) {
+        return n;
+    }
+    return (fibonacci(n - 1) + fibonacci(n - 2));
+}

@@ -2,12 +2,15 @@ public class JavaFibonacciFunctionHandler {
 
     public float handleRequest() {
         long startTime = System.nanoTime();
-        long f1 = 0L, f2 = 1L;
-        for (int i = 0; i < 10000; i++) {
-            long next = f1 + f2;
-            f1 = f2;
-            f2 = next;
+        int x = fibonacci(28);
+        long duration = System.nanoTime() - startTime;
+        return duration * 0.000001F;
+    }
+
+    private int fibonacci(int n) {
+        if (n <= 1) {
+            return n;
         }
-        return (System.nanoTime() - startTime) / 1000000F;
+        return (fibonacci(n - 1) + fibonacci(n - 2));
     }
 }

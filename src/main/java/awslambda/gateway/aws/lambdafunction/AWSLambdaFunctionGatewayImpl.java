@@ -72,8 +72,8 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
 
     private void waitForLambdaFunctionReadiness() {
         Awaitility.with()
-                .pollInterval(1, SECONDS)
-                .atMost(10, SECONDS)
+                .pollInterval(3, SECONDS)
+                .atMost(30, SECONDS)
                 .await()
                 .until(this::checkAvailability);
     }
@@ -107,9 +107,9 @@ public class AWSLambdaFunctionGatewayImpl implements AWSLambdaFunctionGateway {
 
     private File generateArchivedFunctionCode() {
         if (actualFunctionName.contains("java")) {
-            return new File("src/main/resources/Function_Code_Archives_10000/" + actualFunctionName + ".jar");
+            return new File("src/main/resources/Function_Code_Archives/" + actualFunctionName + ".jar");
         }
-        return new File("src/main/resources/Function_Code_Archives_10000/" + actualFunctionName + ".zip");
+        return new File("src/main/resources/Function_Code_Archives/" + actualFunctionName + ".zip");
     }
 
     private InvokeRequest generateInvokeRequest() {
